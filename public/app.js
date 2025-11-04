@@ -29,14 +29,6 @@ const ROLE_INFO = {
     alignment: 'left',
     bubbleClass: 'agent'
   },
-  controller: {
-    name: 'Sales Controller',
-    role: 'Reviewer',
-    badgeClass: 'purple',
-    avatar: 'SC',
-    alignment: 'right',
-    bubbleClass: 'controller'
-  },
   system: {
     name: 'System',
     role: null,
@@ -123,7 +115,6 @@ async function executeFlow() {
   runButton.disabled = true;
   chatInput.disabled = true;
   chatThread.setAttribute('aria-busy', 'true');
-  turnSnapshots = { initial: '', revised: '' };
 
   try {
     const validateRes = await fetch('/api/validate', {
@@ -149,49 +140,10 @@ async function executeFlow() {
     addMessage({
       role: 'agent1',
       turn: 1,
-      heading: 'Initial Recommendation',
+      heading: 'Recommendation',
       reply: null,
       summary: cappedInitialSummary,
       bullets: agent1.bullets
-    });
-
-    const typing2Done = showTyping('controller', 2);
-    const controller = await postJSON('/api/controller', {
-      question,
-      agentSummary: agent1.summary,
-      agentBullets: agent1.bullets,
-      agentFields: agent1.fields
-    });
-    typing2Done();
-    const cappedControllerSummary = applyWordCap(controller.overall, 60);
-    addMessage({
-      role: 'controller',
-      turn: 2,
-      heading: 'Feedback',
-      reply: 'Responding to Turn 1',
-      summary: cappedControllerSummary,
-      bullets: controller.bullets
-    });
-
-    const typing3Done = showTyping('agent1', 3);
-    const revision = await postJSON('/api/agent1/revise', {
-      question,
-      agentSummary: agent1.summary,
-      agentBullets: agent1.bullets,
-      controllerBullets: controller.bullets,
-      controllerFields: controller.fields
-    });
-    typing3Done();
-    const cappedRevisionSummary = applyWordCap(revision.summary, 100);
-    turnSnapshots.revised = getTextBlock(cappedRevisionSummary, revision.bullets);
-    addMessage({
-      role: 'agent1',
-      turn: 3,
-      heading: 'Revised Recommendation',
-      reply: 'Addressing Controller Feedback',
-      summary: cappedRevisionSummary,
-      bullets: revision.bullets,
-      showDelta: true
     });
     addSystemMessage('Flow completed successfully.');
   } catch (err) {
@@ -267,7 +219,7 @@ function addMessage({ role, turn, heading, reply, summary, bullets = [], showDel
   const info = ROLE_INFO[role] || ROLE_INFO.agent1;
 
   const row = document.createElement('div');
-  const isCompactMessage = (role === 'agent1' && turn === 1) || (role === 'controller' && turn === 2);
+  const isCompactMessage = role === 'agent1' && turn === 1;
   row.className = ['msg', info.bubbleClass || '', info.alignment || 'left', isCompactMessage ? 'compact' : '']
     .filter(Boolean)
     .join(' ');
@@ -318,7 +270,7 @@ function addMessage({ role, turn, heading, reply, summary, bullets = [], showDel
   chatThread.appendChild(row);
   scrollChatToBottom({ smooth: role === 'agent1' && turn === 3 });
 
-  if (role === 'agent1' && turn === 3) {
+  if (role === 'agent1') {
     attachCopyAction(bubble, summary, bullets);
   }
 }

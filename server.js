@@ -189,65 +189,6 @@ app.post('/api/agent1', async (req, res) => {
   }
 });
 
-app.post('/api/controller', async (req, res) => {
-  const { question, agentSummary, agentBullets, agentFields } = req.body || {};
-  if (!question || !agentSummary) {
-    return res.status(400).json({ message: 'Controller requires prior agent output.' });
-  }
-
-  const agentBulletsText = ensureArray(agentBullets).map((b, idx) => `${idx + 1}. ${b}`).join('\n');
-  const body = `Dataset (CSV):\n${datasetText}\n\nUser request: ${question}\nAgent 1 summary: ${agentSummary}\nAgent 1 reasons:\n${agentBulletsText}\nAgent 1 cited fields: ${(ensureArray(agentFields)).join(', ')}\n\nRespond ONLY in valid JSON with keys "bullets" (2-5 critique bullets) and "overall" (≤100 words feedback summary). Check recency weighting, overlooked opportunities, fairness, and clarity. Flag if recency missing.`;
-
-  try {
-    const responseText = await callGemini(buildPrompt({
-      role: 'review & critique',
-      instruction: 'evaluate sales agent 1’s picks for completeness, fairness, and clarity. provide constructive feedback.',
-      body
-    }));
-
-    const result = extractJson(responseText);
-    const payload = {
-      overall: result.overall || '',
-      bullets: ensureArray(result.bullets),
-      fields: normalizeFields(result.fields)
-    };
-
-    return res.json(payload);
-  } catch (error) {
-    console.error('Controller error', error);
-    return res.status(500).json({ message: 'Controller failed.' });
-  }
-});
-
-app.post('/api/agent1/revise', async (req, res) => {
-  const { question, agentSummary, agentBullets, controllerBullets, controllerFields } = req.body || {};
-  if (!question || !controllerBullets) {
-    return res.status(400).json({ message: 'Revision requires controller feedback.' });
-  }
-
-  const body = `Dataset (CSV):\n${datasetText}\n\nUser request: ${question}\nPrevious recommendation: ${agentSummary}\nPrevious reasons: ${ensureArray(agentBullets).join('\n')}\nController feedback: ${ensureArray(controllerBullets).join('\n')}\nController cited fields: ${ensureArray(controllerFields).join(', ')}\n\nRespond ONLY in valid JSON with keys "summary" (≤100 words final recommendation with top 3 customers) and "bullets" (2-4 concise justification bullets citing exact fields/values). Incorporate feedback and improve clarity.`;
-
-  try {
-    const responseText = await callGemini(buildPrompt({
-      role: 'apply feedback and improve',
-      instruction: 'revise the recommendation by addressing controller feedback while staying within scope.',
-      body
-    }));
-
-    const result = extractJson(responseText);
-    const payload = {
-      summary: result.summary || '',
-      bullets: ensureArray(result.bullets),
-      fields: normalizeFields(result.fields)
-    };
-
-    return res.json(payload);
-  } catch (error) {
-    console.error('Revision error', error);
-    return res.status(500).json({ message: 'Revision failed.' });
-  }
-});
-
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('*', (req, res) => {
