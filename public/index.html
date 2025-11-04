@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Brightwave Sales Prioritization Lab</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="agents-header">
+        <div class="title-block">
+          <h1>Brightwave Sales Prioritization Lab</h1>
+          <p class="subtitle">Observe how the recommender and reviewer collaborate in transparent turns.</p>
+        </div>
+        <div class="bios">
+          <article class="bio agent1">
+            <div class="bio-badge">Sales Agent 1</div>
+            <h2>Recommender</h2>
+            <p>Selects top 2–3 customers based on Recency, YTD, Frequency, Avg Sale, Growth.</p>
+          </article>
+          <article class="bio controller">
+            <div class="bio-badge">Sales Controller</div>
+            <h2>Reviewer</h2>
+            <p>Checks for missing factors, fairness, bias, clarity; requests corrections.</p>
+          </article>
+        </div>
+      </header>
+
+      <div class="main">
+        <main id="chat-shell">
+          <div class="chat-top">
+            <button id="toggleTable" class="ghost">View Customer Dataset</button>
+            <div id="tableContainer" class="table-container hidden" aria-live="polite">
+              <div class="table-wrapper">
+                <table id="customerTable"></table>
+              </div>
+            </div>
+          </div>
+
+          <section id="chat-thread" aria-live="polite" aria-busy="false"></section>
+
+          <form id="chat-bar">
+            <textarea
+              id="chat-input"
+              rows="1"
+              maxlength="300"
+              placeholder="Based on the data, determine which customers have the most potential and should be contacted first."
+            ></textarea>
+            <button id="chat-send" type="submit">Run Multi-Agent Flow</button>
+          </form>
+        </main>
+      </div>
+    </div>
+    <script src="app.js" defer></script>
+  </body>
+</html>

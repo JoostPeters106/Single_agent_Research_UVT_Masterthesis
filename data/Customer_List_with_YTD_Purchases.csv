@@ -1,0 +1,11 @@
+CustomerID,CustomerName,Industry,Country,YTD_Purchase_Amount,Last_Purchase_Months_Ago,Purchase_Frequency_Per_Year,Average_Order_Value,Growth_Rate_Percent,Account_Tier,Customer_Satisfaction,Notes
+C001,Northwind Retail,Retail,USA,420000,1,10,42000,12,Platinum,4.6,Strong upsell potential
+C002,MedCore Labs,Healthcare,Canada,380000,2,9,42222,10,Gold,4.4,Consistent volume orders
+C003,AgriNova Farms,Agriculture,Netherlands,150000,6,4,37500,-5,Silver,3.9,Seasonal purchasing pattern
+C004,UrbanBuild Co,Construction,Germany,295000,3,7,42143,7,Gold,4.1,Project-based demand rising
+C005,FinEdge Advisors,Finance,UK,510000,1,11,46364,15,Platinum,4.8,High growth in renewals
+C006,ByteSphere Tech,Technology,USA,265000,4,6,44167,8,Gold,4.2,Exploring managed services
+C007,GreenLine Energy,Energy,Norway,330000,2,8,41250,9,Gold,4.0,Pipeline for expansion deal
+C008,TerraFirma Logistics,Logistics,USA,185000,5,5,37000,-2,Silver,3.7,Margin pressure noted
+C009,BlueHarbor Hotels,Hospitality,Spain,210000,7,6,35000,-1,Silver,3.5,Slow recovery phase
+C010,MetroMedia Group,Media,France,275000,2,8,34375,6,Gold,4.3,Stable campaign renewal
