@@ -89,10 +89,6 @@ body {
   border-left: 4px solid var(--accent-blue);
 }
 
-.bio.controller {
-  border-left: 4px solid var(--accent-purple);
-}
-
 .bio-badge {
   align-self: flex-start;
   padding: 0.35rem 0.75rem;
@@ -107,11 +103,6 @@ body {
 .bio.agent1 .bio-badge {
   color: var(--accent-blue);
   background: rgba(37, 99, 235, 0.08);
-}
-
-.bio.controller .bio-badge {
-  color: var(--accent-purple);
-  background: rgba(124, 58, 237, 0.08);
 }
 
 
@@ -256,10 +247,6 @@ th {
 
 .msg.agent .avatar {
   background: var(--accent-blue);
-}
-
-.msg.controller .avatar {
-  background: var(--accent-purple);
 }
 
 .msg.system .avatar {
