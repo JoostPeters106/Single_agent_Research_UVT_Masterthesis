@@ -238,12 +238,13 @@ button.ghost:hover:not(:disabled) {
 }
 
 #chat-thread {
-  flex: 1;
+  flex: 1 1 320px;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   padding: 1.5rem 1.75rem 2rem;
   overflow-y: auto;
+  min-height: 280px;
 }
 
 .msg {
@@ -562,6 +563,7 @@ button.ghost:hover:not(:disabled) {
 
   #chat-thread {
     padding: 1rem 1rem 1.4rem;
+    min-height: 260px;
   }
 
   #chat-bar {
@@ -570,8 +572,8 @@ button.ghost:hover:not(:disabled) {
 
   #chat-input {
     padding: 0.95rem 1.05rem;
-    font-size: 1.08rem;
-    min-height: 132px;
+    font-size: 1.02rem;
+    min-height: 110px;
   }
 
   #chat-send {
@@ -582,7 +584,25 @@ button.ghost:hover:not(:disabled) {
 
 @media (max-width: 480px) {
   #chat-shell {
-    min-height: 100px;
+    min-height: 0;
+  }
+
+  #chat-thread {
+    padding: 1rem 1rem 1.5rem;
+    flex-basis: 220px;
+    min-height: 220px;
+  }
+
+  #chat-bar {
+    position: static;
+    padding: 0.85rem 1rem 1.1rem;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  #chat-input {
+    min-height: 96px;
+    font-size: 1rem;
   }
 
   .title-block h1 {
