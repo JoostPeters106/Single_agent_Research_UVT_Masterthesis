@@ -31,14 +31,6 @@ const ROLE_INFO = {
     alignment: 'left',
     bubbleClass: 'agent'
   },
-  controller: {
-    name: 'Sales Controller',
-    role: 'Reviewer',
-    badgeClass: 'purple',
-    avatar: 'SC',
-    alignment: 'right',
-    bubbleClass: 'controller'
-  },
   system: {
     name: 'System',
     role: null,
@@ -56,8 +48,6 @@ const ROLE_INFO = {
     bubbleClass: 'user'
   }
 };
-
-let turnSnapshots = { initial: '', revised: '' };
 
 async function fetchCustomers() {
   try {
@@ -132,7 +122,6 @@ async function executeFlow() {
   runButton.disabled = true;
   chatInput.disabled = true;
   chatThread.setAttribute('aria-busy', 'true');
-  turnSnapshots = { initial: '', revised: '' };
 
   try {
     const validateRes = await fetch('/api/validate', {
@@ -153,63 +142,15 @@ async function executeFlow() {
     const typing1Done = showTyping('agent1', 1);
     const agent1 = await postJSON('/api/agent1', { question });
     typing1Done();
-    const cappedInitialSummary = applyWordCap(agent1.summary, 80);
-    turnSnapshots.initial = getTextBlock(cappedInitialSummary, agent1.bullets);
+    const cappedSummary = applyWordCap(agent1.summary, 80);
     addMessage({
       role: 'agent1',
       turn: 1,
-      heading: 'Initial Recommendation',
+      heading: 'Recommendation',
       reply: null,
-      summary: cappedInitialSummary,
-      bullets: agent1.bullets
-    });
-
-    const typing2Done = showTyping('controller', 2);
-    const controller = await postJSON('/api/controller', {
-      question,
-      agentSummary: agent1.summary,
-      agentBullets: agent1.bullets,
-      agentFields: agent1.fields
-    });
-    typing2Done();
-    const cappedControllerSummary = applyWordCap(controller.overall, 80);
-    const controllerBullets = Array.isArray(controller.bullets) ? controller.bullets.slice() : [];
-    if (controller.replacementCustomer) {
-      const replacementNote = controller.customerToReplace
-        ? `Replace ${controller.customerToReplace} with ${controller.replacementCustomer}.`
-        : `Add ${controller.replacementCustomer} to the outreach list.`;
-      controllerBullets.unshift(replacementNote);
-    }
-    addMessage({
-      role: 'controller',
-      turn: 2,
-      heading: 'Feedback',
-      reply: 'Responding to Turn 1',
-      summary: cappedControllerSummary,
-      bullets: controllerBullets
-    });
-
-    const typing3Done = showTyping('agent1', 3);
-    const revision = await postJSON('/api/agent1/revise', {
-      question,
-      agentSummary: agent1.summary,
-      agentBullets: agent1.bullets,
-      controllerBullets: controller.bullets,
-      controllerFields: controller.fields,
-      customerToReplace: controller.customerToReplace,
-      replacementCustomer: controller.replacementCustomer
-    });
-    typing3Done();
-    const cappedRevisionSummary = applyWordCap(revision.summary, 80);
-    turnSnapshots.revised = getTextBlock(cappedRevisionSummary, revision.bullets);
-    addMessage({
-      role: 'agent1',
-      turn: 3,
-      heading: 'Revised Recommendation',
-      reply: 'Addressing Controller Feedback',
-      summary: cappedRevisionSummary,
-      bullets: revision.bullets,
-      showDelta: true
+      summary: cappedSummary,
+      bullets: agent1.bullets,
+      allowCopy: true
     });
     addSystemMessage('Flow completed successfully.');
   } catch (err) {
@@ -228,7 +169,7 @@ function resetChat() {
   chatThread.setAttribute('aria-busy', 'false');
   const placeholder = document.createElement('div');
   placeholder.className = 'placeholder';
-  placeholder.textContent = 'Run the flow to see the agents collaborate.';
+  placeholder.textContent = 'Run the flow to see the recommendation.';
   chatThread.appendChild(placeholder);
 }
 
@@ -280,12 +221,12 @@ function showTyping(role, turn) {
   };
 }
 
-function addMessage({ role, turn, heading, reply, summary, bullets = [], showDelta = false }) {
+function addMessage({ role, turn, heading, reply, summary, bullets = [], allowCopy = false }) {
   ensureChatReady();
   const info = ROLE_INFO[role] || ROLE_INFO.agent1;
 
   const row = document.createElement('div');
-  const isCompactMessage = (role === 'agent1' && turn === 1) || (role === 'controller' && turn === 2);
+  const isCompactMessage = role === 'agent1';
   row.className = ['msg', info.bubbleClass || '', info.alignment || 'left', isCompactMessage ? 'compact' : '']
     .filter(Boolean)
     .join(' ');
@@ -325,18 +266,11 @@ function addMessage({ role, turn, heading, reply, summary, bullets = [], showDel
   const body = buildMessageBody(summary, bullets);
   bubble.appendChild(body);
 
-  if (showDelta) {
-    const deltaEl = renderDelta();
-    if (deltaEl) {
-      bubble.appendChild(deltaEl);
-    }
-  }
-
   row.appendChild(bubble);
   chatThread.appendChild(row);
-  scrollChatToBottom({ smooth: role === 'agent1' && turn === 3 });
+  scrollChatToBottom();
 
-  if (role === 'agent1' && turn === 3) {
+  if (allowCopy) {
     attachCopyAction(bubble, summary, bullets);
   }
 }
@@ -361,76 +295,6 @@ function buildMessageBody(summary = '', bullets = []) {
   }
 
   return container;
-}
-
-function getTextBlock(summary = '', bullets = []) {
-  const safeSummary = summary && summary.trim().length > 0 ? summary.trim() : 'No summary provided.';
-  const bulletList = Array.isArray(bullets) ? bullets.filter(Boolean) : [];
-  return [safeSummary, ...bulletList].join(' ');
-}
-
-function renderDelta() {
-  const { added, removed, reordered } = computeChanges(turnSnapshots.initial, turnSnapshots.revised);
-  if (!added.length && !removed.length && !reordered.length) {
-    return null;
-  }
-
-  const list = document.createElement('ul');
-  list.className = 'deltas';
-
-  added.forEach((name) => {
-    const li = document.createElement('li');
-    li.className = 'added';
-    li.textContent = `Added ${name}`;
-    list.appendChild(li);
-  });
-
-  removed.forEach((name) => {
-    const li = document.createElement('li');
-    li.className = 'removed';
-    li.textContent = `Removed ${name}`;
-    list.appendChild(li);
-  });
-
-  reordered.forEach((name) => {
-    const li = document.createElement('li');
-    li.className = 'reordered';
-    li.textContent = `Reordered ${name}`;
-    list.appendChild(li);
-  });
-
-  return list;
-}
-
-function computeChanges(initialText = '', revisedText = '') {
-  const initial = extractCustomers(initialText);
-  const revised = extractCustomers(revisedText);
-
-  const added = revised.filter((name) => !initial.includes(name));
-  const removed = initial.filter((name) => !revised.includes(name));
-
-  const shared = revised.filter((name) => initial.includes(name));
-  const reordered = shared.filter((name) => initial.indexOf(name) !== revised.indexOf(name));
-
-  return {
-    added: Array.from(new Set(added)),
-    removed: Array.from(new Set(removed)),
-    reordered: Array.from(new Set(reordered))
-  };
-}
-
-function extractCustomers(text = '') {
-  const ids = new Set();
-  const matches = text.match(/C\d{1,4}/gi) || [];
-  matches.forEach((item) => ids.add(item.toUpperCase()));
-
-  const namePattern = /(?:Customer|Client|Account)\s+([A-Z][A-Za-z0-9&-]{2,}(?:\s+[A-Z][A-Za-z0-9&-]{2,})?)/g;
-  let nameMatch;
-  while ((nameMatch = namePattern.exec(text)) !== null) {
-    ids.add(nameMatch[1]);
-  }
-
-  return Array.from(ids);
 }
 
 async function postJSON(url, payload) {

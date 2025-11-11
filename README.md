@@ -1,11 +1,11 @@
 # Brightwave Sales Prioritization Lab
 
-This project provides a minimal, production-ready multi-agent web application for an academic experiment studying interaction styles for sales decision-support. The tool helps Brightwave Solutions sales employees decide which customers to contact first, powered by a structured recommendation flow across multiple agents.
+This project provides a minimal, production-ready web application for an academic experiment studying interaction styles for sales decision-support. The tool helps Brightwave Solutions sales employees decide which customers to contact first, powered by a validation gate and a single recommendation agent.
 
 ## Features
 
 - **Validator Gate**: Confirms the user prompt is aligned with the case before any model call.
-- **Agent Timeline**: Transparent, sequential cards that show the initial recommendation, controller feedback, and the final revision.
+- **Agent Timeline**: Transparent cards that show the validation status and the recommender's response.
 - **Dataset Visibility**: Toggleable 10×12 customer dataset used for reasoning.
 - **Model Abstraction**: Central helper injects the required system context and calls the Google Generative Language API.
 - **Fairness & Transparency**: Every response cites the exact fields used.
@@ -85,12 +85,10 @@ The compose file expects a `.env` file in the project root for configuration.
 
 - `POST /api/validate` — semantic safety check for user prompts.
 - `POST /api/agent1` — initial recommendation agent.
-- `POST /api/controller` — controller critique agent.
-- `POST /api/agent1/revise` — revision agent incorporating feedback.
 - `GET /api/customers` — returns the dataset for the UI.
 - `GET /api/health` — health check endpoint.
 
-All model prompts include the mandated system context, enforce ≤120 word outputs, and cite referenced fields.
+All model prompts include the mandated system context, enforce ≤80 word outputs, and cite referenced fields.
 
 ## Notes
 
