@@ -45,7 +45,6 @@ body {
   flex-wrap: wrap;
   gap: 1rem;
   row-gap: 0.75rem;
-  margin-bottom: 1.75rem;
 }
 
 .title-block {
@@ -571,7 +570,6 @@ button.ghost:hover:not(:disabled) {
   }
 
   #chat-input {
-    padding: 0.95rem 1.05rem;
     font-size: 1.02rem;
     min-height: 110px;
   }
@@ -583,9 +581,6 @@ button.ghost:hover:not(:disabled) {
 }
 
 @media (max-width: 480px) {
-  #chat-shell {
-    min-height: 0;
-  }
 
   #chat-thread {
     padding: 1rem 1rem 1.5rem;
@@ -615,6 +610,10 @@ button.ghost:hover:not(:disabled) {
 
   .bio {
     padding: 0.45rem 0.5rem;
+  }
+
+  .bio-badge {
+    padding: 0.10rem 0.4rem;
   }
 
   .bio h2 {
