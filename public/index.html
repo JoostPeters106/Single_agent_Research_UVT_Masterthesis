@@ -10,8 +10,14 @@
   <body>
     <div class="app">
       <header class="agents-header">
-        <div class="title-block">
-          <h1>Brightwave Sales</h1>
+        <div class="header-bar">
+          <div class="title-block">
+            <h1>Brightwave Sales</h1>
+          </div>
+          <button id="restartFlow" class="restart-button" type="button" aria-label="Restart the current conversation">
+            <span class="restart-icon" aria-hidden="true">&#x21BB;</span>
+            <span class="restart-label">Restart</span>
+          </button>
         </div>
         <div class="bios">
           <article class="bio agent1">
@@ -24,28 +30,6 @@
 
       <div class="main">
         <main id="chat-shell">
-          <div class="chat-top">
-            <div class="chat-top-actions">
-              <button id="toggleTable" class="ghost">View Customer Dataset</button>
-              <button id="toggleCase" class="ghost pull-right">View Case Text</button>
-            </div>
-            <div id="tableContainer" class="table-container hidden" aria-live="polite">
-              <div class="table-wrapper">
-                <table id="customerTable"></table>
-              </div>
-            </div>
-            <div id="caseContainer" class="case-container hidden" aria-live="polite">
-              <article>
-                <h3>Case Prompt</h3>
-                <p>
-                  Brightwave Solutions needs to prioritise which customers to contact first using the provided dataset. Focus on
-                  recency, year-to-date revenue, purchase frequency, and growth indicators while remaining fair and citing the
-                  exact data fields that justify each recommendation.
-                </p>
-              </article>
-            </div>
-          </div>
-
           <section id="chat-thread" aria-live="polite" aria-busy="false"></section>
 
           <form id="chat-bar">
