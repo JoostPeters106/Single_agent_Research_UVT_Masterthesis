@@ -11,14 +11,18 @@
     <div class="app">
       <header class="agents-header">
         <div class="title-block">
-          <h1>Brightwave Sales Prioritization Lab</h1>
-          <p class="subtitle">Observe how the recommender analyzes the case in transparent turns.</p>
+          <h1>Brightwave Sales</h1>
         </div>
         <div class="bios">
           <article class="bio agent1">
             <div class="bio-badge">Sales Agent 1</div>
             <h2>Recommender</h2>
-            <p>Selects top 2–3 customers based on Recency, YTD, Frequency, Avg Sale, Growth.</p>
+            <p>Suggests potential customers based on data</p>
+          </article>
+          <article class="bio controller">
+            <div class="bio-badge">Sales Controller</div>
+            <h2>Reviewer</h2>
+            <p>Checks for missing factors, fairness, bias, clarity; requests corrections.</p>
           </article>
         </div>
       </header>
@@ -26,11 +30,24 @@
       <div class="main">
         <main id="chat-shell">
           <div class="chat-top">
-            <button id="toggleTable" class="ghost">View Customer Dataset</button>
+            <div class="chat-top-actions">
+              <button id="toggleTable" class="ghost">View Customer Dataset</button>
+              <button id="toggleCase" class="ghost pull-right">View Case Text</button>
+            </div>
             <div id="tableContainer" class="table-container hidden" aria-live="polite">
               <div class="table-wrapper">
                 <table id="customerTable"></table>
               </div>
+            </div>
+            <div id="caseContainer" class="case-container hidden" aria-live="polite">
+              <article>
+                <h3>Case Prompt</h3>
+                <p>
+                  Brightwave Solutions needs to prioritise which customers to contact first using the provided dataset. Focus on
+                  recency, year-to-date revenue, purchase frequency, and growth indicators while remaining fair and citing the
+                  exact data fields that justify each recommendation.
+                </p>
+              </article>
             </div>
           </div>
 
@@ -43,7 +60,7 @@
               maxlength="300"
               placeholder="Based on the data, determine which customers have the most potential and should be contacted first."
             ></textarea>
-            <button id="chat-send" type="submit">Run Multi-Agent Flow</button>
+            <button id="chat-send" type="submit">Submit</button>
           </form>
         </main>
       </div>

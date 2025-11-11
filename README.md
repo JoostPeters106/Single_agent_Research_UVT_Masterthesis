@@ -5,7 +5,7 @@ This project provides a minimal, production-ready multi-agent web application fo
 ## Features
 
 - **Validator Gate**: Confirms the user prompt is aligned with the case before any model call.
-- **Agent Timeline**: Transparent card that shows the recommender's recommendation.
+- **Agent Timeline**: Transparent, sequential cards that show the initial recommendation, controller feedback, and the final revision.
 - **Dataset Visibility**: Toggleable 10×12 customer dataset used for reasoning.
 - **Model Abstraction**: Central helper injects the required system context and calls the Google Generative Language API.
 - **Fairness & Transparency**: Every response cites the exact fields used.
@@ -85,6 +85,8 @@ The compose file expects a `.env` file in the project root for configuration.
 
 - `POST /api/validate` — semantic safety check for user prompts.
 - `POST /api/agent1` — initial recommendation agent.
+- `POST /api/controller` — controller critique agent.
+- `POST /api/agent1/revise` — revision agent incorporating feedback.
 - `GET /api/customers` — returns the dataset for the UI.
 - `GET /api/health` — health check endpoint.
 

@@ -7,10 +7,10 @@ const { parse } = require('csv-parse/sync');
 const { GoogleGenAI } = require('@google/genai');
 require('dotenv').config();
 
-const PORT = process.env.PORT || 3000;
-const DEFAULT_GEMINI_API_KEY = 'AIzaSyBHt-MtufqYAtrbM0F19GrYGqFp0bmAFBU';
+const PORT = process.env.PORT || 3001;
+const DEFAULT_GEMINI_API_KEY = 'AIzaSyCd8O-whBsmvHobNvzdCaEcKf32ndvaeKI';
 const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com';
-const DEFAULT_MODEL = 'gemini-2.0-flash';
+const DEFAULT_MODEL = 'gemini-2.5-flash-lite';
 
 function normalizeBaseUrl(url) {
   if (!url) {
@@ -34,7 +34,7 @@ const geminiClient = apiKey && baseUrl
       },
     })
   : null;
-const SYSTEM_CONTEXT = "you are assisting in an academic experiment. the user is a sales employee at brightwave solutions. your outputs must be short (≤100 words), strictly about which customers to contact first using only the provided dataset. justify briefly using concrete fields (e.g., ‘last sale=1 mo’, ‘ytd=€400k’, ‘freq=8/yr’). avoid unrelated topics. ensure fairness; do not rely on stereotypes. be transparent and cite which fields informed your choice.";
+const SYSTEM_CONTEXT = "you are assisting in an academic experiment. the user is a sales employee at brightwave solutions. your outputs must be short (≤80 words), strictly about which customers to contact first using only the provided dataset. justify briefly using concrete fields (e.g., ‘last sale=1 mo’, ‘ytd=€400k’, ‘freq=8/yr’). avoid unrelated topics. ensure fairness; do not rely on stereotypes. be transparent and cite which fields informed your choice.";
 const TARGET_QUERY = "Based on the data, determine which customers have the most potential and should be contacted first.";
 
 const app = express();
@@ -166,7 +166,7 @@ app.post('/api/agent1', async (req, res) => {
     return res.status(400).json({ message: 'Question is required.' });
   }
 
-  const body = `Dataset (CSV):\n${datasetText}\n\nUser request: ${question}\n\nRespond ONLY in valid JSON with keys "summary" (≤100 words text) and "bullets" (2-4 concise bullet reasons referencing exact fields and values).`;
+  const body = `Dataset (CSV):\n${datasetText}\n\nUser request: ${question}\n\nRespond ONLY in valid JSON with keys "summary" (≤80 words text) and "bullets" (2-4 concise bullet reasons referencing exact fields and values).`;
 
   try {
     const responseText = await callGemini(buildPrompt({
@@ -186,6 +186,75 @@ app.post('/api/agent1', async (req, res) => {
   } catch (error) {
     console.error('Agent 1 error', error);
     return res.status(500).json({ message: 'Agent 1 failed.' });
+  }
+});
+
+app.post('/api/controller', async (req, res) => {
+  const { question, agentSummary, agentBullets, agentFields } = req.body || {};
+  if (!question || !agentSummary) {
+    return res.status(400).json({ message: 'Controller requires prior agent output.' });
+  }
+
+  const agentBulletsText = ensureArray(agentBullets).map((b, idx) => `${idx + 1}. ${b}`).join('\n');
+  const body = `Dataset (CSV):\n${datasetText}\n\nUser request: ${question}\nAgent 1 summary: ${agentSummary}\nAgent 1 reasons:\n${agentBulletsText}\nAgent 1 cited fields: ${(ensureArray(agentFields)).join(', ')}\n\nRespond ONLY in valid JSON with keys "bullets" (2-5 critique bullets), "overall" (≤80 words feedback summary), "customerToReplace" (ID or name of the agent pick you disagree with), and "replacementCustomer" (ID or name of a better customer). You must disagree with at least one of Sales Agent 1's recommendations, clearly identify which customer should be replaced, and propose a single replacement backed by data. Check recency weighting, overlooked opportunities, fairness, and clarity. Flag if recency missing.`;
+
+  try {
+    const responseText = await callGemini(buildPrompt({
+      role: 'review & critique',
+      instruction: 'evaluate sales agent 1’s picks for completeness, fairness, and clarity. provide constructive feedback.',
+      body
+    }));
+
+    const result = extractJson(responseText);
+    const payload = {
+      overall: result.overall || '',
+      bullets: ensureArray(result.bullets),
+      fields: normalizeFields(result.fields),
+      customerToReplace: result.customerToReplace || '',
+      replacementCustomer: result.replacementCustomer || ''
+    };
+
+    return res.json(payload);
+  } catch (error) {
+    console.error('Controller error', error);
+    return res.status(500).json({ message: 'Controller failed.' });
+  }
+});
+
+app.post('/api/agent1/revise', async (req, res) => {
+  const {
+    question,
+    agentSummary,
+    agentBullets,
+    controllerBullets,
+    controllerFields,
+    customerToReplace,
+    replacementCustomer
+  } = req.body || {};
+  if (!question || !controllerBullets) {
+    return res.status(400).json({ message: 'Revision requires controller feedback.' });
+  }
+
+  const body = `Dataset (CSV):\n${datasetText}\n\nUser request: ${question}\nPrevious recommendation: ${agentSummary}\nPrevious reasons: ${ensureArray(agentBullets).join('\n')}\nController feedback: ${ensureArray(controllerBullets).join('\n')}\nController cited fields: ${ensureArray(controllerFields).join(', ')}\nCustomer to replace: ${customerToReplace || 'n/a'}\nReplacement customer: ${replacementCustomer || 'n/a'}\n\nRespond ONLY in valid JSON with keys "summary" (≤80 words final recommendation with top 3 customers) and "bullets" (2-4 concise justification bullets citing exact fields/values). You must replace the specified customer with the replacement suggested by the controller and explicitly mention how the change addresses the feedback. Incorporate feedback and improve clarity.`;
+
+  try {
+    const responseText = await callGemini(buildPrompt({
+      role: 'apply feedback and improve',
+      instruction: 'revise the recommendation by addressing controller feedback while staying within scope.',
+      body
+    }));
+
+    const result = extractJson(responseText);
+    const payload = {
+      summary: result.summary || '',
+      bullets: ensureArray(result.bullets),
+      fields: normalizeFields(result.fields)
+    };
+
+    return res.json(payload);
+  } catch (error) {
+    console.error('Revision error', error);
+    return res.status(500).json({ message: 'Revision failed.' });
   }
 });
 

@@ -5,6 +5,8 @@ const chatForm = document.getElementById('chat-bar');
 const toggleTableBtn = document.getElementById('toggleTable');
 const tableContainer = document.getElementById('tableContainer');
 const tableEl = document.getElementById('customerTable');
+const toggleCaseBtn = document.getElementById('toggleCase');
+const caseContainer = document.getElementById('caseContainer');
 
 function scrollChatToBottom(options = {}) {
   if (!chatThread) return;
@@ -28,6 +30,14 @@ const ROLE_INFO = {
     avatar: 'A1',
     alignment: 'left',
     bubbleClass: 'agent'
+  },
+  controller: {
+    name: 'Sales Controller',
+    role: 'Reviewer',
+    badgeClass: 'purple',
+    avatar: 'SC',
+    alignment: 'right',
+    bubbleClass: 'controller'
   },
   system: {
     name: 'System',
@@ -80,6 +90,13 @@ toggleTableBtn.addEventListener('click', () => {
   }
 });
 
+if (toggleCaseBtn && caseContainer) {
+  toggleCaseBtn.addEventListener('click', () => {
+    const hidden = caseContainer.classList.toggle('hidden');
+    toggleCaseBtn.textContent = hidden ? 'View Case Text' : 'Hide Case Text';
+  });
+}
+
 if (chatInput) {
   autoSizeChatInput();
   chatInput.addEventListener('input', autoSizeChatInput);
@@ -115,6 +132,7 @@ async function executeFlow() {
   runButton.disabled = true;
   chatInput.disabled = true;
   chatThread.setAttribute('aria-busy', 'true');
+  turnSnapshots = { initial: '', revised: '' };
 
   try {
     const validateRes = await fetch('/api/validate', {
@@ -135,15 +153,63 @@ async function executeFlow() {
     const typing1Done = showTyping('agent1', 1);
     const agent1 = await postJSON('/api/agent1', { question });
     typing1Done();
-    const cappedInitialSummary = applyWordCap(agent1.summary, 60);
+    const cappedInitialSummary = applyWordCap(agent1.summary, 80);
     turnSnapshots.initial = getTextBlock(cappedInitialSummary, agent1.bullets);
     addMessage({
       role: 'agent1',
       turn: 1,
-      heading: 'Recommendation',
+      heading: 'Initial Recommendation',
       reply: null,
       summary: cappedInitialSummary,
       bullets: agent1.bullets
+    });
+
+    const typing2Done = showTyping('controller', 2);
+    const controller = await postJSON('/api/controller', {
+      question,
+      agentSummary: agent1.summary,
+      agentBullets: agent1.bullets,
+      agentFields: agent1.fields
+    });
+    typing2Done();
+    const cappedControllerSummary = applyWordCap(controller.overall, 80);
+    const controllerBullets = Array.isArray(controller.bullets) ? controller.bullets.slice() : [];
+    if (controller.replacementCustomer) {
+      const replacementNote = controller.customerToReplace
+        ? `Replace ${controller.customerToReplace} with ${controller.replacementCustomer}.`
+        : `Add ${controller.replacementCustomer} to the outreach list.`;
+      controllerBullets.unshift(replacementNote);
+    }
+    addMessage({
+      role: 'controller',
+      turn: 2,
+      heading: 'Feedback',
+      reply: 'Responding to Turn 1',
+      summary: cappedControllerSummary,
+      bullets: controllerBullets
+    });
+
+    const typing3Done = showTyping('agent1', 3);
+    const revision = await postJSON('/api/agent1/revise', {
+      question,
+      agentSummary: agent1.summary,
+      agentBullets: agent1.bullets,
+      controllerBullets: controller.bullets,
+      controllerFields: controller.fields,
+      customerToReplace: controller.customerToReplace,
+      replacementCustomer: controller.replacementCustomer
+    });
+    typing3Done();
+    const cappedRevisionSummary = applyWordCap(revision.summary, 80);
+    turnSnapshots.revised = getTextBlock(cappedRevisionSummary, revision.bullets);
+    addMessage({
+      role: 'agent1',
+      turn: 3,
+      heading: 'Revised Recommendation',
+      reply: 'Addressing Controller Feedback',
+      summary: cappedRevisionSummary,
+      bullets: revision.bullets,
+      showDelta: true
     });
     addSystemMessage('Flow completed successfully.');
   } catch (err) {
@@ -219,7 +285,7 @@ function addMessage({ role, turn, heading, reply, summary, bullets = [], showDel
   const info = ROLE_INFO[role] || ROLE_INFO.agent1;
 
   const row = document.createElement('div');
-  const isCompactMessage = role === 'agent1' && turn === 1;
+  const isCompactMessage = (role === 'agent1' && turn === 1) || (role === 'controller' && turn === 2);
   row.className = ['msg', info.bubbleClass || '', info.alignment || 'left', isCompactMessage ? 'compact' : '']
     .filter(Boolean)
     .join(' ');
@@ -270,7 +336,7 @@ function addMessage({ role, turn, heading, reply, summary, bullets = [], showDel
   chatThread.appendChild(row);
   scrollChatToBottom({ smooth: role === 'agent1' && turn === 3 });
 
-  if (role === 'agent1') {
+  if (role === 'agent1' && turn === 3) {
     attachCopyAction(bubble, summary, bullets);
   }
 }
@@ -426,14 +492,14 @@ function addSystemMessage(message, { ephemeral = false } = {}) {
   return () => {};
 }
 
-function applyWordCap(text = '', limit = 60) {
+function applyWordCap(text = '', limit = 80) {
   if (!text) return '';
   const words = text.trim().split(/\s+/);
   if (words.length <= limit) {
     return text.trim();
   }
   const truncated = words.slice(0, limit).join(' ');
-  return `${truncated}…shortened for brevity`;
+  return `${truncated}…`;
 }
 
 function attachCopyAction(container, summary = '', bullets = []) {
