@@ -2,11 +2,7 @@ const chatInput = document.getElementById('chat-input');
 const runButton = document.getElementById('chat-send');
 const chatThread = document.getElementById('chat-thread');
 const chatForm = document.getElementById('chat-bar');
-const toggleTableBtn = document.getElementById('toggleTable');
-const tableContainer = document.getElementById('tableContainer');
-const tableEl = document.getElementById('customerTable');
-const toggleCaseBtn = document.getElementById('toggleCase');
-const caseContainer = document.getElementById('caseContainer');
+const restartButton = document.getElementById('restartFlow');
 
 function scrollChatToBottom(options = {}) {
   if (!chatThread) return;
@@ -41,7 +37,7 @@ const ROLE_INFO = {
   },
   user: {
     name: 'Sales Strategist',
-    role: 'Case Prompt',
+    role: null,
     badgeClass: 'blue',
     avatar: 'You',
     alignment: 'left',
@@ -49,42 +45,33 @@ const ROLE_INFO = {
   }
 };
 
-async function fetchCustomers() {
-  try {
-    const res = await fetch('/api/customers');
-    if (!res.ok) throw new Error('Failed to load dataset');
-    const data = await res.json();
-    renderTable(data.columns, data.records);
-  } catch (err) {
-    tableContainer.innerHTML = '<p class="error">Unable to load customer dataset.</p>';
-  }
-}
+if (restartButton) {
+  restartButton.addEventListener('click', () => {
+    resetChat({ message: 'Conversation reset. Submit a new prompt to begin.' });
+    if (chatInput) {
+      chatInput.value = '';
+      chatInput.disabled = false;
+      autoSizeChatInput();
+    }
+    if (runButton) {
+      runButton.disabled = false;
+    }
+    if (chatThread) {
+      chatThread.setAttribute('aria-busy', 'false');
+    }
 
-function renderTable(columns, records) {
-  if (!Array.isArray(columns) || !Array.isArray(records)) return;
-  const thead = `<thead><tr>${columns.map((col) => `<th>${col}</th>`).join('')}</tr></thead>`;
-  const rows = records
-    .map((row) => {
-      const cells = columns.map((col) => `<td>${row[col]}</td>`).join('');
-      return `<tr>${cells}</tr>`;
-    })
-    .join('');
-  tableEl.innerHTML = `${thead}<tbody>${rows}</tbody>`;
-}
-
-toggleTableBtn.addEventListener('click', () => {
-  const hidden = tableContainer.classList.toggle('hidden');
-  toggleTableBtn.textContent = hidden ? 'View Customer Dataset' : 'Hide Customer Dataset';
-  if (!hidden && !tableEl.innerHTML) {
-    fetchCustomers();
-  }
-});
-
-if (toggleCaseBtn && caseContainer) {
-  toggleCaseBtn.addEventListener('click', () => {
-    const hidden = caseContainer.classList.toggle('hidden');
-    toggleCaseBtn.textContent = hidden ? 'View Case Text' : 'Hide Case Text';
+    restartButton.classList.remove('restart-triggered');
+    // Force a reflow so repeated clicks retrigger the animation class
+    void restartButton.offsetWidth;
+    restartButton.classList.add('restart-triggered');
+    setTimeout(() => {
+      restartButton.classList.remove('restart-triggered');
+    }, 650);
   });
+}
+
+if (chatThread) {
+  resetChat();
 }
 
 if (chatInput) {
@@ -164,12 +151,12 @@ async function executeFlow() {
   }
 }
 
-function resetChat() {
+function resetChat({ message } = {}) {
   chatThread.innerHTML = '';
   chatThread.setAttribute('aria-busy', 'false');
   const placeholder = document.createElement('div');
   placeholder.className = 'placeholder';
-  placeholder.textContent = 'Run the flow to see the recommendation.';
+  placeholder.textContent = message || 'Run the flow to see the recommendation.';
   chatThread.appendChild(placeholder);
 }
 
