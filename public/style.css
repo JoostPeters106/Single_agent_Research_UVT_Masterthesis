@@ -306,12 +306,6 @@ button.ghost:hover:not(:disabled) {
   color: #1f2937;
 }
 
-.bubble.compact .body,
-.bubble.compact .body p,
-.bubble.compact .body li {
-  font-style: italic;
-}
-
 .msg.right .avatar {
   order: 2;
 }

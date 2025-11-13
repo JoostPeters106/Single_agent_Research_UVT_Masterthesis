@@ -8,7 +8,7 @@ const { GoogleGenAI } = require('@google/genai');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3001;
-const DEFAULT_GEMINI_API_KEY = 'API-Key';
+const DEFAULT_GEMINI_API_KEY = 'AIzaSyBbEYBL8fIkkQ49Ormt5Y6UmiLE68JmCDE';
 const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com';
 const DEFAULT_MODEL = 'gemini-2.5-flash-lite';
 
@@ -171,7 +171,7 @@ app.post('/api/agent1', async (req, res) => {
   try {
     const responseText = await callGemini(buildPrompt({
       role: 'data-driven sales recommender',
-      instruction: 'select the top 2–3 customers to contact first using the dataset. emphasise recency, ytd amount, purchase frequency, average order value, and growth rate.',
+      instruction: 'select the top 3 customers to contact first using the dataset. emphasise briefly the data used.',
       body
     }));
 

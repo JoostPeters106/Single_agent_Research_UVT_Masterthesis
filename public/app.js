@@ -257,9 +257,7 @@ function addMessage({ role, turn, heading, reply, summary, bullets = [], allowCo
   chatThread.appendChild(row);
   scrollChatToBottom();
 
-  if (allowCopy) {
-    attachCopyAction(bubble, summary, bullets);
-  }
+
 }
 
 function buildMessageBody(summary = '', bullets = []) {
@@ -351,24 +349,6 @@ function applyWordCap(text = '', limit = 80) {
   }
   const truncated = words.slice(0, limit).join(' ');
   return `${truncated}…`;
-}
-
-function attachCopyAction(container, summary = '', bullets = []) {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'copy-action';
-  button.textContent = 'Copy Final Recommendation';
-  button.addEventListener('click', async () => {
-    const list = Array.isArray(bullets) ? bullets.filter(Boolean) : [];
-    const joined = [summary.trim(), ...list].filter(Boolean).join('\n');
-    const copied = await copyToClipboard(joined);
-    if (copied) {
-      addSystemMessage('Final recommendation copied to clipboard.');
-    } else {
-      addSystemMessage('Unable to copy recommendation.');
-    }
-  });
-  container.appendChild(button);
 }
 
 async function copyToClipboard(text) {
